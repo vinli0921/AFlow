@@ -151,31 +151,50 @@ def run_code(code):
 class Programmer(Operator):
     def __init__(self, llm: LLM, name: str = "Programmer"):
         super().__init__(llm, name)
+        # Create a class-level process pool, instead of creating a new one for each execution
+        self.process_pool = concurrent.futures.ProcessPoolExecutor(max_workers=1)
+
+    def __del__(self):
+        """Ensure the process pool is closed when the object is destroyed"""
+        if hasattr(self, 'process_pool'):
+            self.process_pool.shutdown(wait=True)
 
     async def exec_code(self, code, timeout=30):
         """
         Asynchronously execute code and return an error if timeout occurs.
         """
         loop = asyncio.get_running_loop()
-        with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-            try:
-                # Submit run_code task to the process pool
-                future = loop.run_in_executor(executor, run_code, code)
-                # Wait for the task to complete or timeout
-                result = await asyncio.wait_for(future, timeout=timeout)
-                return result
-            except asyncio.TimeoutError:
-                # Timeout, attempt to shut down the process pool
-                executor.shutdown(wait=False, cancel_futures=True)
-                return "Error", "Code execution timed out"
-            except Exception as e:
-                return "Error", f"Unknown error: {str(e)}"
+
+        try:
+            # Use the class-level process pool
+            future = loop.run_in_executor(self.process_pool, run_code, code)
+            # Wait for the task to complete or timeout
+            result = await asyncio.wait_for(future, timeout=timeout)
+            return result
+        except asyncio.TimeoutError:
+            # Only cancel this specific future, not the entire process pool
+            future.cancel()
+            # Force garbage collection
+            import gc
+            gc.collect()
+            return "Error", "Code execution timed out"
+        except concurrent.futures.process.BrokenProcessPool:
+            # If the process pool is broken, recreate it
+            self.process_pool.shutdown(wait=False)
+            self.process_pool = concurrent.futures.ProcessPoolExecutor(max_workers=1)
+            return "Error", "Process pool broken, try again"
+        except Exception as e:
+            return "Error", f"Unknown error: {str(e)}"
 
     async def code_generate(self, problem, analysis, feedback, mode):
         """
         Asynchronous method to generate code.
         """
-        prompt = PYTHON_CODE_VERIFIER_PROMPT.format(problem=problem, analysis=analysis, feedback=feedback)
+        prompt = PYTHON_CODE_VERIFIER_PROMPT.format(
+            problem=problem,
+            analysis=analysis,
+            feedback=feedback
+        )
         response = await self._fill_node(CodeGenerateOp, prompt, mode, function_name="solve")
         return response
 
@@ -196,13 +215,17 @@ class Programmer(Operator):
             if status == "Success":
                 return {"code": code, "output": output}
             else:
-                logger.info(f"Execution error on attempt {i + 1}, error message: {output}")
+                print(f"Execution error on attempt {i + 1}, error message: {output}")
                 feedback = (
                     f"\nThe result of the error from the code you wrote in the previous round:\n"
                     f"Code: {code}\n\nStatus: {status}, {output}"
                 )
-        return {"code": code, "output": output}
 
+            # Force garbage collection after each iteration
+            import gc
+            gc.collect()
+
+        return {"code": code, "output": output}
 
 class Test(Operator):
     def __init__(self, llm: LLM, name: str = "Test"):
