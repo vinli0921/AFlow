@@ -7,7 +7,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 
 from benchmarks.benchmark import BaseBenchmark
 from metagpt_core.logs import logger
-from metagpt_core.utils import sanitize
+from metagpt_core.utils.sanitize import sanitize
 
 
 class HumanEvalBenchmark(BaseBenchmark):
