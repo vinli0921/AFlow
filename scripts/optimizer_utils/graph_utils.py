@@ -5,13 +5,13 @@ import time
 import traceback
 from typing import List
 
-from metagpt_core.ext.aflow.scripts.prompts.optimize_prompt import (
+from scripts.prompts.optimize_prompt import (
     WORKFLOW_CUSTOM_USE,
     WORKFLOW_INPUT,
     WORKFLOW_OPTIMIZE_PROMPT,
     WORKFLOW_TEMPLATE,
 )
-from metagpt_core.logs import logger
+from scripts.logs import logger
 
 
 class GraphUtils:
@@ -32,7 +32,7 @@ class GraphUtils:
             graph_class = getattr(graph_module, "Workflow")
             return graph_class
         except ImportError as e:
-            logger.info(f"Error loading graph for round {round_number}: {e}")
+            logger.error(f"Error loading graph for round {round_number}: {e}")
             raise
 
     def read_graph_files(self, round_number: int, workflows_path: str):
@@ -45,10 +45,10 @@ class GraphUtils:
             with open(graph_file_path, "r", encoding="utf-8") as file:
                 graph_content = file.read()
         except FileNotFoundError as e:
-            logger.info(f"Error: File not found for round {round_number}: {e}")
+            logger.error(f"Error: File not found for round {round_number}: {e}")
             raise
         except Exception as e:
-            logger.info(f"Error loading prompt for round {round_number}: {e}")
+            logger.error(f"Error loading prompt for round {round_number}: {e}")
             raise
         return prompt_content, graph_content
 
@@ -104,7 +104,7 @@ class GraphUtils:
                 return response
             except Exception as e:
                 retries += 1
-                logger.info(f"Error generating prediction: {e}. Retrying... ({retries}/{max_retries})")
+                logger.error(f"Error generating prediction: {e}. Retrying... ({retries}/{max_retries})")
                 if retries == max_retries:
                     logger.info("Maximum retries reached. Skipping this sample.")
                     break

@@ -48,10 +48,10 @@ Note: In custom, the input and instruction are directly concatenated(instruction
 """
 
 WORKFLOW_TEMPLATE = """from typing import Literal
-import metagpt_core.ext.aflow.scripts.optimized.{dataset}.workflows.template.operator as operator
-import metagpt_core.ext.aflow.scripts.optimized.{dataset}.workflows.round_{round}.prompt as prompt_custom
-from metagpt_core.provider.llm_provider_registry import create_llm_instance
-from metagpt_core.utils.cost_manager import CostManager
+import optimized.{dataset}.workflows.template.operator as operator
+import optimized.{dataset}.workflows.round_{round}.prompt as prompt_custom
+from scripts.async_llm import create_llm_instance
+
 
 DatasetType = Literal["HumanEval", "MBPP", "GSM8K", "MATH", "HotpotQA", "DROP"]
 

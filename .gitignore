@@ -1,1 +1,6 @@
 .DS_Store
+config/config2.yaml
+logs
+data/datasets
+optimized
+*/__pycache__

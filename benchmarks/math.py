@@ -10,7 +10,7 @@ from sympy.parsing.sympy_parser import parse_expr
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from benchmarks.benchmark import BaseBenchmark
-from metagpt_core.logs import logger
+from scripts.logs import logger
 
 
 class MATHBenchmark(BaseBenchmark):

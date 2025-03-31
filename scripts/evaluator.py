@@ -33,7 +33,7 @@ class Evaluator:
             "DROP": DROPBenchmark,
         }
 
-    async def agent_evaluate(
+    async def graph_evaluate(
         self, dataset: DatasetType, graph, params: dict, path: str, is_test: bool = False
     ) -> Tuple[float, float, float]:
         if dataset not in self.dataset_configs:
@@ -59,5 +59,5 @@ class Evaluator:
         return graph(name=dataset, llm_config=llm_config, dataset=dataset_config)
 
     def _get_data_path(self, dataset: DatasetType, test: bool) -> str:
-        base_path = f"metagpt/ext/aflow/data/{dataset.lower()}"
+        base_path = f"data/datasets/{dataset.lower()}"
         return f"{base_path}_test.jsonl" if test else f"{base_path}_validate.jsonl"

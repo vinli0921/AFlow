@@ -5,9 +5,7 @@
 
 
 from scripts.evaluator import DatasetType
-from metagpt_core.provider.llm_provider_registry import create_llm_instance
-from metagpt_core.provider.utils.cost_manager import CostManager
-
+from scripts.async_llm import create_llm_instance
 
 class Workflow:
     def __init__(
@@ -19,7 +17,6 @@ class Workflow:
         self.name = name
         self.dataset = dataset
         self.llm = create_llm_instance(llm_config)
-        self.llm.cost_manager = CostManager()
 
     async def __call__(self, problem: str):
         """

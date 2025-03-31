@@ -1,22 +1,15 @@
 """
-@Time    : 2024/7/24 16:37
-@Author  : didi
-@File    : utils.py
+@Time    : 2025-03-31
+@Author  : didi & Zhaoyang
 @Acknowledgement https://github.com/evalplus/evalplus/blob/master/evalplus/sanitize.py
 """
 
 import ast
 import traceback
-
-
 from enum import Enum
 from typing import Dict, Generator, List, Optional, Set, Tuple
 
-import tree_sitter_python
-from tree_sitter import Language, Node, Parser
-
-
-from loguru import logger
+from tree_sitter import Node
 
 
 class NodeType(Enum):
@@ -138,52 +131,81 @@ def sanitize(code: str, entrypoint: Optional[str] = None) -> str:
     :return: A sanitized version of the input code, containing only relevant parts.
     """
     code = code_extract(code)
-    code_bytes = bytes(code, "utf8")
-    parser = Parser(Language(tree_sitter_python.language()))
-    tree = parser.parse(code_bytes)
-    class_names = set()
-    function_names = set()
-    variable_names = set()
+    
+    try:
+        # Use the more reliable fallback method directly to avoid the warnings/errors
+        return fallback_sanitize_with_ast(code, entrypoint)
+    except Exception as e:
+        print(f"ERROR in sanitize: {str(e)}")
+        # If even the fallback fails, return the original code
+        return code
 
-    root_node = tree.root_node
-    import_nodes = []
-    definition_nodes = []
-
-    for child in root_node.children:
-        if child.type in NodeType.IMPORT.value:
-            import_nodes.append(child)
-        elif child.type == NodeType.CLASS.value:
-            name = get_definition_name(child)
-            if not (name in class_names or name in variable_names or name in function_names):
-                definition_nodes.append((name, child))
-                class_names.add(name)
-        elif child.type == NodeType.FUNCTION.value:
-            name = get_definition_name(child)
-            if not (name in function_names or name in variable_names or name in class_names) and has_return_statement(
-                child
-            ):
-                definition_nodes.append((name, child))
-                function_names.add(get_definition_name(child))
-        elif child.type == NodeType.EXPRESSION.value and child.children[0].type == NodeType.ASSIGNMENT.value:
-            subchild = child.children[0]
-            name = get_definition_name(subchild)
-            if not (name in variable_names or name in function_names or name in class_names):
-                definition_nodes.append((name, subchild))
-                variable_names.add(name)
-
-    if entrypoint:
-        name2deps = get_deps(definition_nodes)
-        reacheable = get_function_dependency(entrypoint, name2deps)
-
-    sanitized_output = b""
-
-    for node in import_nodes:
-        sanitized_output += code_bytes[node.start_byte : node.end_byte] + b"\n"
-
-    for pair in definition_nodes:
-        name, node = pair
-        if entrypoint and name not in reacheable:
-            continue
-        sanitized_output += code_bytes[node.start_byte : node.end_byte] + b"\n"
-    return sanitized_output[:-1].decode("utf8")
-
+def fallback_sanitize_with_ast(code: str, entrypoint: Optional[str] = None) -> str:
+    """A function that uses Python's built-in ast module instead of tree-sitter."""
+    try:
+        tree = ast.parse(code)
+        imports = []
+        definitions = []
+        function_names = set()
+        class_names = set()
+        variable_names = set()
+        
+        # First collect all top-level definitions
+        for node in ast.iter_child_nodes(tree):
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                imports.append(ast.unparse(node))
+            elif isinstance(node, ast.FunctionDef):
+                function_names.add(node.name)
+                definitions.append((node.name, ast.unparse(node)))
+            elif isinstance(node, ast.ClassDef):
+                class_names.add(node.name)
+                definitions.append((node.name, ast.unparse(node)))
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        variable_names.add(target.id)
+                        definitions.append((target.id, ast.unparse(node)))
+        
+        # If entrypoint is specified, find reachable definitions
+        if entrypoint:
+            # Build a dependency graph
+            dependencies = {}
+            for name, _ in definitions:
+                dependencies[name] = set()
+            
+            # Add edges to the dependency graph
+            for name, code_str in definitions:
+                # Parse the code to find references to other definitions
+                node = ast.parse(code_str)
+                for subnode in ast.walk(node):
+                    if isinstance(subnode, ast.Name) and subnode.id in dependencies:
+                        dependencies[name].add(subnode.id)
+            
+            # Find all definitions reachable from the entrypoint
+            reachable = set()
+            def dfs(name):
+                if name in reachable:
+                    return
+                reachable.add(name)
+                for dep in dependencies.get(name, []):
+                    dfs(dep)
+            
+            # Start DFS from the entrypoint
+            if entrypoint in dependencies:
+                dfs(entrypoint)
+            
+            # Filter definitions to only include reachable ones
+            filtered_defs = []
+            for name, code_str in definitions:
+                if name in reachable:
+                    filtered_defs.append(code_str)
+            definitions = filtered_defs
+        else:
+            # If no entrypoint, include all definitions
+            definitions = [code_str for _, code_str in definitions]
+        
+        # Combine imports and definitions
+        return "\n".join(imports + definitions)
+    except Exception as e:
+        print(f"AST fallback failed: {str(e)}")
+        return code  # Return original code if all else fails

@@ -11,7 +11,7 @@ import os
 
 import numpy as np
 
-from metagpt_core.utils.common import read_json_file, write_json_file
+from scripts.utils.common import read_json_file, write_json_file
 
 
 def generate_random_indices(n, n_samples, test=False):
