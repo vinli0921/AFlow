@@ -3,7 +3,7 @@
 # @Author  : Zhaoyang
 # @Desc    : 
 
-from typing import Dict, List, Tuple, Type, Optional, Union, Any, Callable
+from typing import Dict, List, Tuple, Type, Optional, Union, Any
 
 from pydantic import BaseModel, Field, create_model
 import re
@@ -36,7 +36,7 @@ class BaseFormatter(BaseModel):
 class XmlFormatter(BaseFormatter):
     """Formatter for XML responses"""
     model: Optional[Type[BaseModel]] = None
-    fields: Dict[str, Field] = Field(default_factory=dict)
+    fields: Dict[str, Any] = Field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, fields_dict: Dict[str, str]) -> "XmlFormatter":

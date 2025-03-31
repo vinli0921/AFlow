@@ -64,7 +64,7 @@ def parse_args():
     parser.add_argument(
         "--optimized_path",
         type=str,
-        default="metagpt/ext/aflow/scripts/optimized",
+        default="optimized",
         help="Optimized result save path",
     )
     parser.add_argument("--initial_round", type=int, default=1, help="Initial round")
@@ -72,15 +72,15 @@ def parse_args():
     parser.add_argument("--check_convergence", type=bool, default=True, help="Whether to enable early stop")
     parser.add_argument("--validation_rounds", type=int, default=1, help="Validation rounds")
     parser.add_argument(
-        "--if_first_optimize",
+        "--if_force_download",
         type=lambda x: x.lower() == "true",
-        default=True,
-        help="Whether to download dataset for the first time",
+        default=False,
+        help="Whether enforce dataset download.",
     )
     parser.add_argument(
         "--opt_model_name",
         type=str,
-        default="claude-3-5-sonnet",
+        default="claude-3-5-sonnet-20241022",
         help="Specifies the name of the model used for optimization tasks.",
     )
     parser.add_argument(
@@ -112,7 +112,7 @@ if __name__ == "__main__":
             "Please add it to the configuration file or specify a valid model using the --exec_model_name flag. "
         )
 
-    download(["datasets", "initial_rounds"], if_first_download=args.if_first_optimize)
+    download(["datasets", "initial_rounds"], force_download=args.if_force_download)
 
     optimizer = Optimizer(
         dataset=config.dataset,

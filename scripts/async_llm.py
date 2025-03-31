@@ -16,6 +16,7 @@ class LLMConfig:
         self.temperature = config.get("temperature", 1)
         self.key = config.get("key", None)
         self.base_url = config.get("base_url", "https://oneapi.deepwisdom.ai/v1")
+        self.top_p = config.get("top_p", 1)
 
 class LLMsConfig:
     """Configuration manager for multiple LLM configurations"""
@@ -51,6 +52,10 @@ class LLMsConfig:
             with open(config_file, 'r', encoding='utf-8') as f:
                 config_data = yaml.safe_load(f)
             
+            # Your YAML has a 'models' top-level key that contains the model configs
+            if 'models' in config_data:
+                config_data = config_data['models']
+                
             cls._default_config = cls(config_data)
         
         return cls._default_config
@@ -60,8 +65,19 @@ class LLMsConfig:
         if llm_name not in self.configs:
             raise ValueError(f"Configuration for {llm_name} not found")
         
+        config = self.configs[llm_name]
+        
+        # Create a config dictionary with the expected keys for LLMConfig
+        llm_config = {
+            "model": llm_name,  # Use the key as the model name
+            "temperature": config.get("temperature", 1),
+            "key": config.get("api_key"),  # Map api_key to key
+            "base_url": config.get("base_url", "https://oneapi.deepwisdom.ai/v1"),
+            "top_p": config.get("top_p", 1)  # Add top_p parameter
+        }
+        
         # Create and return an LLMConfig instance with the specified configuration
-        return LLMConfig(self.configs[llm_name])
+        return LLMConfig(llm_config)
     
     def add_config(self, name: str, config: Dict[str, Any]) -> None:
         """Add or update a configuration"""
@@ -70,7 +86,7 @@ class LLMsConfig:
     def get_all_names(self) -> list:
         """Get names of all available LLM configurations"""
         return list(self.configs.keys())
-
+    
 class ModelPricing:
     """Pricing information for different models in USD per 1K tokens"""
     PRICES = {
@@ -78,6 +94,7 @@ class ModelPricing:
         "gpt-4o": {"input": 0.0025, "output": 0.01},
         "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
         "gpt-4o-mini-2024-07-18": {"input": 0.00015, "output": 0.0006},
+        "claude-3-5-sonnet": {"input": 0.003, "output": 0.015}
     }
     
     @classmethod
@@ -93,7 +110,7 @@ class ModelPricing:
                 return cls.PRICES[key][token_type]
         
         # Return default pricing if no match found
-        return cls.PRICES["default"][token_type]
+        return 0
 
 class TokenUsageTracker:
     """Tracks token usage and calculates costs"""
@@ -233,7 +250,7 @@ class AsyncLLM:
         return self.usage_tracker.get_summary()    
     
 
-def create_llm_instance(self, llm_config):
+def create_llm_instance(llm_config):
     """
     Create an AsyncLLM instance using the provided configuration
     
