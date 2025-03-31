@@ -6,8 +6,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from benchmarks.benchmark import BaseBenchmark
-from metagpt_core.logs import logger
-from metagpt_core.utils.sanitize import sanitize
+from scripts.logs import logger
+from scripts.utils.sanitize import sanitize
 
 
 class HumanEvalBenchmark(BaseBenchmark):

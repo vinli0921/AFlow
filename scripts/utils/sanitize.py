@@ -1,6 +1,6 @@
 """
-@Time    : 2025-03-25
-@Author  : didi & MoshiQAQ
+@Time    : 2025-03-31
+@Author  : didi & Zhaoyang
 @Acknowledgement https://github.com/evalplus/evalplus/blob/master/evalplus/sanitize.py
 """
 
@@ -9,8 +9,7 @@ import traceback
 from enum import Enum
 from typing import Dict, Generator, List, Optional, Set, Tuple
 
-import tree_sitter_python
-from tree_sitter import Language, Node, Parser
+from tree_sitter import Node
 
 
 class NodeType(Enum):

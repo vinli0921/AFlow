@@ -1,18 +1,32 @@
 # -*- coding: utf-8 -*-
-# @Date    : 6/27/2024 17:36 PM
-# @Author  : didi
+# @Date    : 2025-03-31
+# @Author  : didi & zhaoyang
 # @Desc    : operator demo of aflow
+
 import asyncio
 import concurrent.futures
 import random
 import sys
 import traceback
 from collections import Counter
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 from tenacity import retry, stop_after_attempt, wait_fixed
 
-from metagpt_core.action_nodes.action_node import ActionNode
+from scripts.async_llm import AsyncLLM
+from scripts.logs import logger
+from scripts.formatter import BaseFormatter, FormatError, XmlFormatter, TextFormatter, CodeFormatter
+from scripts.operator_an import (
+    AnswerGenerateOp,
+    CodeGenerateOp,
+    FormatOp,
+    GenerateOp,
+    MdEnsembleOp,
+    ReflectionTestOp,
+    ReviewOp,
+    ReviseOp,
+    ScEnsembleOp,
+) # All BaseModel
 
 from scripts.prompts.prompt import (
     ANSWER_GENERATION_PROMPT,
@@ -24,16 +38,13 @@ from scripts.prompts.prompt import (
     REVISE_PROMPT,
     SC_ENSEMBLE_PROMPT,
 )
-from scripts.utils import (
+from scripts.utils.code import (
     extract_test_cases_from_jsonl,
     test_case_2_test_function,
 )
-from metagpt_core.llm import LLM
-from metagpt_core.logs import logger
-
 
 class Operator:
-    def __init__(self, llm: LLM, name: str):
+    def __init__(self, llm: AsyncLLM, name: str):
         self.name = name
         self.llm = llm
 
@@ -41,16 +52,41 @@ class Operator:
         raise NotImplementedError
 
     async def _fill_node(self, op_class, prompt, mode=None, **extra_kwargs):
-        fill_kwargs = {"context": prompt, "llm": self.llm}
-        if mode:
-            fill_kwargs["mode"] = mode
-        fill_kwargs.update(extra_kwargs)
-        node = await ActionNode.from_pydantic(op_class).fill(**fill_kwargs)
-        return node.instruct_content.model_dump()
+        # Create appropriate formatter based on mode
+        formatter = self._create_formatter(op_class, mode)
+        
+        try:
+            # Use the formatter with AsyncLLM
+            if formatter:
+                response = await self.llm.call_with_format(prompt, formatter)
+            else:
+                # Fallback to direct call if no formatter is needed
+                response = await self.llm(prompt)
+                
+            # Convert to expected format based on the original implementation
+            if isinstance(response, dict):
+                return response
+            else:
+                return {"response": response}
+        except FormatError as e:
+            print(f"Format error in {self.name}: {str(e)}")
+            return {"error": str(e)}
+    
+    def _create_formatter(self, op_class, mode=None) -> Optional[BaseFormatter]:
+        """Create appropriate formatter based on operation class and mode"""
+        if mode == "xml_fill":
+            return XmlFormatter.from_model(op_class)
+        elif mode == "code_fill":
+            return CodeFormatter()
+        elif mode == "single_fill":
+            return TextFormatter()
+        else:
+            # Return None if no specific formatter is needed
+            return None
 
 
 class Custom(Operator):
-    def __init__(self, llm: LLM, name: str = "Custom"):
+    def __init__(self, llm: AsyncLLM, name: str = "Custom"):
         super().__init__(llm, name)
 
     async def __call__(self, input, instruction):
@@ -60,7 +96,7 @@ class Custom(Operator):
 
 
 class AnswerGenerate(Operator):
-    def __init__(self, llm: LLM, name: str = "AnswerGenerate"):
+    def __init__(self, llm: AsyncLLM, name: str = "AnswerGenerate"):
         super().__init__(llm, name)
 
     async def __call__(self, input: str, mode: str = None) -> Tuple[str, str]:
@@ -70,7 +106,7 @@ class AnswerGenerate(Operator):
 
 
 class CustomCodeGenerate(Operator):
-    def __init__(self, llm: LLM, name: str = "CustomCodeGenerate"):
+    def __init__(self, llm: AsyncLLM, name: str = "CustomCodeGenerate"):
         super().__init__(llm, name)
 
     async def __call__(self, problem, entry_point, instruction):
@@ -87,7 +123,7 @@ class ScEnsemble(Operator):
     Link: https://arxiv.org/abs/2311.17311
     """
 
-    def __init__(self, llm: LLM, name: str = "ScEnsemble"):
+    def __init__(self, llm: AsyncLLM, name: str = "ScEnsemble"):
         super().__init__(llm, name)
 
     async def __call__(self, solutions: List[str], problem: str):
@@ -149,7 +185,7 @@ def run_code(code):
 
 
 class Programmer(Operator):
-    def __init__(self, llm: LLM, name: str = "Programmer"):
+    def __init__(self, llm: AsyncLLM, name: str = "Programmer"):
         super().__init__(llm, name)
         # Create a class-level process pool, instead of creating a new one for each execution
         self.process_pool = concurrent.futures.ProcessPoolExecutor(max_workers=1)
@@ -228,7 +264,7 @@ class Programmer(Operator):
         return {"code": code, "output": output}
 
 class Test(Operator):
-    def __init__(self, llm: LLM, name: str = "Test"):
+    def __init__(self, llm: AsyncLLM, name: str = "Test"):
         super().__init__(llm, name)
 
     def exec_code(self, solution, entry_point):
@@ -301,7 +337,7 @@ class Test(Operator):
 
 
 class Format(Operator):
-    def __init__(self, llm: LLM, name: str = "Format"):
+    def __init__(self, llm: AsyncLLM, name: str = "Format"):
         super().__init__(llm, name)
 
     async def __call__(self, problem, solution, mode: str = None):
@@ -311,7 +347,7 @@ class Format(Operator):
 
 
 class Review(Operator):
-    def __init__(self, llm: LLM, name: str = "Review"):
+    def __init__(self, llm: AsyncLLM, name: str = "Review"):
         super().__init__(llm, name)
 
     async def __call__(self, problem, solution, mode: str = None):
@@ -321,7 +357,7 @@ class Review(Operator):
 
 
 class Revise(Operator):
-    def __init__(self, llm: LLM, name: str = "Revise"):
+    def __init__(self, llm: AsyncLLM, name: str = "Revise"):
         super().__init__(llm, name)
 
     async def __call__(self, problem, solution, feedback, mode: str = None):
@@ -336,7 +372,7 @@ class MdEnsemble(Operator):
     Link: https://arxiv.org/abs/2311.16452
     """
 
-    def __init__(self, llm: LLM, name: str = "MdEnsemble", vote_count: int = 5):
+    def __init__(self, llm: AsyncLLM, name: str = "MdEnsemble", vote_count: int = 5):
         super().__init__(llm, name)
         self.vote_count = vote_count
 

@@ -11,7 +11,7 @@ from typing import Dict
 import requests
 from tqdm import tqdm
 
-from metagpt_core.logs import logger
+from scripts.logs import logger
 
 
 def download_file(url: str, filename: str) -> None:

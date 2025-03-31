@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # @Date    : 2024-03-21
-# @Author  : Your Name
+# @Author  : all
 # @Desc    : Interface for AFLOW
 
 import asyncio
@@ -9,10 +9,10 @@ import sys
 from pathlib import Path
 from typing import Optional, Tuple
 
-from metagpt_core.configs.models_config import ModelsConfig
 from scripts.evaluator import DatasetType
 from scripts.optimizer_utils.data_utils import DataUtils
-from metagpt_core.logs import logger
+from scripts.logs import logger
+from scripts.async_llm import LLMsConfig
 
 
 def load_best_round(dataset: str, optimized_path: str = "metagpt/ext/aflow/scripts/optimized") -> int:
@@ -71,7 +71,7 @@ async def aflow_inference(
     WorkflowClass = load_workflow_class(str(graph_path))
 
     # 创建工作流实例
-    llm_config = ModelsConfig.default().get(llm_name)
+    llm_config = LLMsConfig.default().get(llm_name)
     workflow = WorkflowClass(
         name=f"{dataset}_workflow",
         llm_config=llm_config,

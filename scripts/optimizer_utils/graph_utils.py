@@ -5,13 +5,13 @@ import time
 import traceback
 from typing import List
 
-from metagpt_core.ext.aflow.scripts.prompts.optimize_prompt import (
+from scripts.prompts.optimize_prompt import (
     WORKFLOW_CUSTOM_USE,
     WORKFLOW_INPUT,
     WORKFLOW_OPTIMIZE_PROMPT,
     WORKFLOW_TEMPLATE,
 )
-from metagpt_core.logs import logger
+from scripts.logs import logger
 
 
 class GraphUtils:

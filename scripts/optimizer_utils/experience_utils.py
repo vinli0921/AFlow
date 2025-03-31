@@ -2,9 +2,8 @@ import json
 import os
 from collections import defaultdict
 
-from metagpt_core.logs import logger
-from metagpt_core.utils.common import read_json_file, write_json_file
-
+from scripts.logs import logger
+from scripts.utils.common import read_json_file, write_json_file
 
 class ExperienceUtils:
     def __init__(self, root_path: str):

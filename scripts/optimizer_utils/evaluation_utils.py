@@ -1,4 +1,4 @@
-from metagpt_core.ext.aflow.scripts.evaluator import Evaluator
+from scripts.evaluator import Evaluator
 
 
 class EvaluationUtils:
@@ -6,7 +6,7 @@ class EvaluationUtils:
         self.root_path = root_path
 
     async def evaluate_initial_round(self, optimizer, graph_path, directory, validation_n, data):
-        # 使用 optimizer 的 graph_utils 来加载图
+        # Load graph with graph_utils from optimizer
         optimizer.graph = optimizer.graph_utils.load_graph(optimizer.round, graph_path)
         evaluator = Evaluator(eval_path=directory)
 

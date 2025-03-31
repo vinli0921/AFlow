@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
 # @Date    : 8/12/2024 22:00 PM
 # @Author  : issac
-# @Desc    : optimizer for graph
+# @Desc    : optimizer for graph (updated with AsyncLLM integration)
 
 import asyncio
 import time
-from typing import List, Literal
+from typing import List, Literal, Dict
 
 from pydantic import BaseModel, Field
 
-from metagpt_core.action_nodes.action_node import ActionNode
 from scripts.evaluator import DatasetType
 from scripts.optimizer_utils.convergence_utils import ConvergenceUtils
 from scripts.optimizer_utils.data_utils import DataUtils
 from scripts.optimizer_utils.evaluation_utils import EvaluationUtils
 from scripts.optimizer_utils.experience_utils import ExperienceUtils
 from scripts.optimizer_utils.graph_utils import GraphUtils
-from metagpt_core.logs import logger
-from metagpt_core.provider.llm_provider_registry import create_llm_instance
+from scripts.async_llm import create_llm_instance
+from scripts.formatter import XmlFormatter, FormatError
+from scripts.logs import logger
 
 QuestionType = Literal["math", "code", "qa"]
 OptimizerType = Literal["Graph", "Test"]
@@ -148,11 +148,30 @@ class Optimizer:
                 experience, sample["score"], graph[0], prompt, operator_description, self.type, log_data
             )
 
-            graph_optimize_node = await ActionNode.from_pydantic(GraphOptimize).fill(
-                context=graph_optimize_prompt, mode="xml_fill", llm=self.optimize_llm
-            )
-
-            response = await self.graph_utils.get_graph_optimize_response(graph_optimize_node)
+            # Replace ActionNode with AsyncLLM and XmlFormatter
+            try:
+                # Create XmlFormatter based on GraphOptimize model
+                graph_formatter = XmlFormatter.from_model(GraphOptimize)
+                
+                # Call the LLM with formatter
+                response = await self.optimize_llm.call_with_format(
+                    graph_optimize_prompt, 
+                    graph_formatter
+                )
+                
+                # If we reach here, response is properly formatted and validated
+                logger.info(f"Graph optimization response received successfully")
+            except FormatError as e:
+                # Handle format validation errors
+                logger.error(f"Format error in graph optimization: {str(e)}")
+                # Try again with a fallback approach - direct call with post-processing
+                raw_response = await self.optimize_llm(graph_optimize_prompt)
+                
+                # Try to extract fields using basic parsing
+                response = self._extract_fields_from_response(raw_response)
+                if not response:
+                    logger.error("Failed to extract fields from raw response, retrying...")
+                    continue
 
             # Check if the modification meets the conditions
             check = self.experience_utils.check_modification(
@@ -177,6 +196,44 @@ class Optimizer:
         self.experience_utils.update_experience(directory, experience, avg_score)
 
         return avg_score
+
+    def _extract_fields_from_response(self, response: str) -> Dict[str, str]:
+        """
+        Fallback method to extract fields from raw response text using basic parsing
+        
+        Args:
+            response: Raw response text from LLM
+            
+        Returns:
+            Dictionary with extracted fields or None if extraction fails
+        """
+        try:
+            # Try to extract XML tags with regex
+            import re
+            
+            # Initialize result dictionary with default values
+            result = {
+                "modification": "",
+                "graph": "",
+                "prompt": ""
+            }
+            
+            # Extract each field with regex
+            for field in result.keys():
+                pattern = rf"<{field}>(.*?)</{field}>"
+                match = re.search(pattern, response, re.DOTALL)
+                if match:
+                    result[field] = match.group(1).strip()
+            
+            # Verify we have at least some content
+            if not any(result.values()):
+                logger.error("No fields could be extracted from response")
+                return None
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error extracting fields from response: {str(e)}")
+            return None
 
     async def test(self):
         rounds = [5]  # You can choose the rounds you want to test here.

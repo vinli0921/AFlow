@@ -10,8 +10,8 @@ import aiofiles
 import pandas as pd
 from tqdm.asyncio import tqdm_asyncio
 
-from metagpt_core.logs import logger
-from metagpt_core.utils.common import write_json_file
+from scripts.logs import logger
+from scripts.utils.common import write_json_file
 
 
 class BaseBenchmark(ABC):
