@@ -10,7 +10,7 @@ import re
 
 from abc import ABC, abstractmethod
 
-from scripts.utils import sanitize
+from scripts.utils.sanitize import sanitize
 
 class FormatError(Exception):
     """Exception raised when response format validation fails"""
@@ -160,7 +160,7 @@ class CodeFormatter(BaseFormatter):
         try:
             # First try to extract code from markdown code blocks
             code = self._extract_code_from_markdown(response)
-            
+    
             # If no code blocks found, treat the entire response as code
             if not code:
                 code = response
@@ -173,7 +173,7 @@ class CodeFormatter(BaseFormatter):
                 return False, None
             
             # Return the sanitized code
-            result = {"code": sanitized_code}
+            result = {"response": sanitized_code}
             return True, result
             
         except Exception as e:
