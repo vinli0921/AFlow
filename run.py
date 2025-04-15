@@ -64,7 +64,7 @@ def parse_args():
     parser.add_argument(
         "--optimized_path",
         type=str,
-        default="optimized",
+        default="workspace",
         help="Optimized result save path",
     )
     parser.add_argument("--initial_round", type=int, default=1, help="Initial round")

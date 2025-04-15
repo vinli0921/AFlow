@@ -1,8 +1,12 @@
 # AFlow: Automating Agentic Workflow Generation
 
+[![Arxiv](https://img.shields.io/badge/arXiv-AFlow-b31b1b)](https://arxiv.org/abs/2410.10762)
+[![PR Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://github.com/FoundationAgents/AFlow/pulls)
+
+
 AFlow is a framework for automatically generating and optimizing Agentic Workflows. It uses Monte Carlo tree search in a code-represented workflow space to find effective workflows, replacing manual development with machine effort. Our approach shows potential to outperform handcrafted workflows on various tasks. 
 
-[Read our paper on arXiv](https://arxiv.org/abs/2410.10762)
+We're building it to support more benchmarks and open-ended tasks! If you have any questions, please open an issue or email us!
 
 <p align="center">
 <a href=""><img src="assets/AFLOW-performance.jpg" alt="Performance Of AFlow" title="Performance of AFlow<sub>1</sub>" width="80%"></a>
@@ -60,37 +64,35 @@ For custom tasks, you can reference the code in the `benchmark` folder. Inherit 
 7. Run the optimization:
    ```bash
    # Using default parameters
-   python -m examples.aflow.optimize --dataset MATH
+   python run.py --dataset MATH
    
    # Or with custom parameters
-   python -m examples.aflow.optimize --dataset MATH --sample n --optimized_path xxx ...
+   python run.py --dataset MATH --sample n --optimized_path xxx ...
    ```
 
 ## Reproduce the Results in the Paper
-1. We provide the raw data obtained from our experiments in this [link](https://drive.google.com/uc?export=download&id=1Sr5wjgKf3bN8OC7G6cO3ynzJqD4w6_Dv), including the workflows and prompts generated in each iteration, as well as their trajectories on the validation dataset. We also provide the optimal workflow for each dataset and the corresponding data on the test dataset. You can download these data using `metagpt/ext/aflow/data/download_data.py`. 
-2. You can directly reproduce our experimental results by use different `ExperimentConfig` of `examples/aflow/optimize.py`.
+1. We provide the raw data obtained from our experiments in this [link](https://drive.google.com/uc?export=download&id=1Sr5wjgKf3bN8OC7G6cO3ynzJqD4w6_Dv), including the workflows and prompts generated in each iteration, as well as their trajectories on the validation dataset. We also provide the optimal workflow for each dataset and the corresponding data on the test dataset. You can download these data using `data/download_data.py`. 
+2. You can directly reproduce our experimental results by use different `ExperimentConfig` of `run.py`.
 
 ## Roadmap
 
-- [ ] Support multiple search forms
-- [ ] Support multiple benchmark forms
-- [ ] Support LeaderBoard
-- [ ] Support multiple models
-- [ ] Support multimodality
-- [ ] Serve as a base for reinforcement learning library
+- Support multiple search algorithms
+- Support multi model search in workflow
+- Support LeaderBoard
+- Support more benchmarks
+- Support multimodality tasks
 
 ## Citation
 
 If you use AFlow in your research, please cite our paper:
 
 ```
-@misc{zhang2024aflow,
-      title={AFlow: Automating Agentic Workflow Generation}, 
-      author={Jiayi Zhang and Jinyu Xiang and Zhaoyang Yu and Fengwei Teng and Xionghui Chen and Jiaqi Chen and Mingchen Zhuge and Xin Cheng and Sirui Hong and Jinlin Wang and Bingnan Zheng and Bang Liu and Yuyu Luo and Chenglin Wu},
-      year={2024},
-      eprint={2410.10762},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2410.10762}, 
+@inproceedings{
+   zhang2025aflow,
+   title={{AF}low: Automating Agentic Workflow Generation},
+   author={Jiayi Zhang and Jinyu Xiang and Zhaoyang Yu and Fengwei Teng and Xiong-Hui Chen and Jiaqi Chen and Mingchen Zhuge and Xin Cheng and Sirui Hong and Jinlin Wang and Bingnan Zheng and Bang Liu and Yuyu Luo and Chenglin Wu},
+   booktitle={The Thirteenth International Conference on Learning Representations},
+   year={2025},
+   url={https://openreview.net/forum?id=z5uVAKwmjf}
 }
 ```
