@@ -112,7 +112,7 @@ if __name__ == "__main__":
             "Please add it to the configuration file or specify a valid model using the --exec_model_name flag. "
         )
 
-    download(["datasets", "initial_rounds"], force_download=args.if_force_download)
+    download(["datasets"], force_download=args.if_force_download) # remove download initial_rounds in new version.
 
     optimizer = Optimizer(
         dataset=config.dataset,
