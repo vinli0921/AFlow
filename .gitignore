@@ -5,3 +5,5 @@ data/datasets
 optimized
 */__pycache__
 *.pyc
+/workspace
+*.json
