@@ -8,8 +8,8 @@ from sympy.parsing.latex import parse_latex
 from sympy.parsing.sympy_parser import parse_expr
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
-from metagpt.ext.aflow.benchmark.benchmark import BaseBenchmark
-from metagpt.logs import logger
+from benchmarks.benchmark import BaseBenchmark
+from scripts.logs import logger
 import inspect
 
 

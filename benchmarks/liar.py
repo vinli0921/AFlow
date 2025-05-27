@@ -2,14 +2,14 @@ import re
 import string
 from typing import Callable, List, Tuple
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
-from metagpt.ext.aflow.benchmark.benchmark import BaseBenchmark
-from metagpt.logs import logger
+from benchmarks.benchmark import BaseBenchmark
+from scripts.logs import logger
 
 class LairBenchmark(BaseBenchmark):
     def __init__(self, name: str, file_path: str, log_path: str):
         super().__init__(name, file_path, log_path)
 
-    def normalize_answer(self, s: str) -> str or int:
+    def normalize_answer(self, s: str):
         """
         Normalize answer for evaluation by:
         1. Converting to lowercase

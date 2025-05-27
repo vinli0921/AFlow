@@ -7,7 +7,7 @@ To create a benchmark for a new dataset, follow these steps:
 1. Create a new Python file, e.g., `my_dataset_benchmark.py`
 2. Import the base class:
    ```python
-   from metagpt_core.ext.aflow.benchmark.benchmark import BaseBenchmark
+   from benchmarks.benchmark import BaseBenchmark
    ```
 3. Create a new class that inherits from `BaseBenchmark`:
    ```python
