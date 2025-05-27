@@ -11,7 +11,7 @@ class CodeDataset(Enum):
 
 def extract_test_cases_from_jsonl(entry_point: str, dataset: CodeDataset = CodeDataset.HUMAN_EVAL):
     if dataset == CodeDataset.HUMAN_EVAL.value:
-        file_path = "data/humaneval_public_test.jsonl"
+        file_path = "data/datasets/humaneval_public_test.jsonl"
         # Retain the original hardcoded test cases
         hardcoded_cases = {
             "find_zero": "",
@@ -26,7 +26,7 @@ def extract_test_cases_from_jsonl(entry_point: str, dataset: CodeDataset = CodeD
             "starts_one_ends": "",
         }
     elif dataset == CodeDataset.MBPP.value:
-        file_path = "data/mbpp_public_test.jsonl"
+        file_path = "data/datasets/mbpp_public_test.jsonl"
         hardcoded_cases = {
             "remove_odd": "",
             "replace_spaces": "",
