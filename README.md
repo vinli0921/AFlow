@@ -38,7 +38,16 @@ For custom tasks, you can reference the code in the `benchmark` folder. Inherit 
 
 ## Quick Start
 
-1. Configure optimization parameters:
+1. Set up the Python environment:
+   ```bash
+   # Create and activate a Python 3.9 virtual environment
+   conda create -n <your_env_name> python=3.9
+
+   # Install dependencies
+   pip install -r requirements.txt
+   ```
+
+2. Configure optimization parameters:
    - Use command line arguments or modify default parameters in `run.py`:
      ```python
      --dataset              # (Required) Dataset type (HumanEval/MBPP/GSM8K/MATH/HotpotQA/DROP)
@@ -51,17 +60,17 @@ For custom tasks, you can reference the code in the `benchmark` folder. Inherit 
      --if_first_optimize    # Set True for first optimization, False afterwards
      ```
 
-2. Configure LLM parameters in `config/config2.yaml` (see `config/config2.example.yaml` for reference)
+3. Configure LLM parameters in `config/config2.yaml` (see `config/config2.example.yaml` for reference)
 
-3. Set up operators in `run.py` and in `operator.py`, `optimized_path/template/operator.json`. You can reference our implementation to add operators for specific datasets
+4. Set up operators in `run.py` and in `operator.py`, `optimized_path/template/operator.json`. You can reference our implementation to add operators for specific datasets
 
-4. For first-time use, download datasets and initial rounds by setting `download(["datasets", "initial_rounds"])` in `run.py`
+5. For first-time use, download datasets and initial rounds by setting `download(["datasets", "initial_rounds"])` in `run.py`
 
-5. (Optional) Add your custom dataset and corresponding evaluation function following the [Custom Datasets](#custom-datasets) section
+6. (Optional) Add your custom dataset and corresponding evaluation function following the [Custom Datasets](#custom-datasets) section
 
-6. (Optional) If you want to use a portion of the validation data, you can set `va_list` in `evaluator.py`
+7. (Optional) If you want to use a portion of the validation data, you can set `va_list` in `evaluator.py`
 
-7. Run the optimization:
+8. Run the optimization:
    ```bash
    # Using default parameters
    python run.py --dataset MATH
