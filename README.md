@@ -66,7 +66,7 @@ For custom tasks, you can reference the code in the `benchmark` folder. Inherit 
 
 4. Set up operators in `run.py` and in `operator.py`, `optimized_path/template/operator.json`. You can reference our implementation to add operators for specific datasets
 
-5. For first-time use, download datasets and initial rounds by setting `download(["datasets", "initial_rounds"])` in `run.py`
+5. For first-time use, download datasets and initial rounds by setting `download(["datasets"])` in `run.py`
 
 6. (Optional) Add your custom dataset and corresponding evaluation function following the [Custom Datasets](#custom-datasets) section
 
