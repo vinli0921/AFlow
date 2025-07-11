@@ -165,7 +165,7 @@ class Test(Operator):
                     test_fail="executed unsucessfully",
                 )
                 response = await self._fill_node(ReflectionTestOp, prompt, mode="code_fill")
-                solution = response["reflection_and_solution"]
+                solution = response["response"]
             else:
                 prompt = REFLECTION_ON_PUBLIC_TEST_PROMPT.format(
                     problem=problem,
@@ -174,7 +174,7 @@ class Test(Operator):
                     test_fail=result,
                 )
                 response = await self._fill_node(ReflectionTestOp, prompt, mode="code_fill")
-                solution = response["reflection_and_solution"]
+                solution = response["response"]
         
         result = self.exec_code(solution, entry_point)
         if result == "no error":
