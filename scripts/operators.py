@@ -301,7 +301,7 @@ class Test(Operator):
     async def __call__(self, problem, solution, entry_point, test_loop: int = 3):
         """
         "Test": {
-        "description": "Test the solution with test cases, if the solution is correct, return 'no error', if the solution is incorrect, return reflect on the soluion and the error information",
+        "description": "Test the solution with test cases, if the solution is correct, return 'no error'; if incorrect, reflect on the solution and the error information",
         "interface": "test(problem: str, solution: str, entry_point: str) -> str"
         }
         """

@@ -22,7 +22,7 @@ from scripts.logs import logger
 import sys
 sys.path.append("..")
 sys.path.append("benchmarks")
-from scripts.utils.lcb_test import run_test  # 确保已安装lcb_runner
+from scripts.utils.lcb_runner import run_test  # 确保已安装lcb_runner
 
 # 从LiveCodeBench官方eval中复制的关键函数
 #sys.set_int_max_str_digits(50000)
