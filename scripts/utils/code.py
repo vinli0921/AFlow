@@ -1,7 +1,7 @@
 import re
 import json
 from enum import Enum
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Union
 
 
 class CodeDataset(Enum):
@@ -9,8 +9,13 @@ class CodeDataset(Enum):
     MBPP = "MBPP"
 
 
-def extract_test_cases_from_jsonl(entry_point: str, dataset: CodeDataset = CodeDataset.HUMAN_EVAL):
-    if dataset == CodeDataset.HUMAN_EVAL.value:
+def extract_test_cases_from_jsonl(entry_point: str, dataset: Union[CodeDataset, str] = CodeDataset.HUMAN_EVAL):
+    if isinstance(dataset, CodeDataset):
+        dataset_value = dataset.value
+    else:
+        dataset_value = dataset
+
+    if dataset_value == CodeDataset.HUMAN_EVAL.value:
         file_path = "data/datasets/humaneval_public_test.jsonl"
         # Retain the original hardcoded test cases
         hardcoded_cases = {
@@ -25,7 +30,7 @@ def extract_test_cases_from_jsonl(entry_point: str, dataset: CodeDataset = CodeD
             "sum_squares": "",
             "starts_one_ends": "",
         }
-    elif dataset == CodeDataset.MBPP.value:
+    elif dataset_value == CodeDataset.MBPP.value:
         file_path = "data/datasets/mbpp_public_test.jsonl"
         hardcoded_cases = {
             "remove_odd": "",

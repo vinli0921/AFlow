@@ -59,7 +59,7 @@ For custom tasks, you can reference the code in the `benchmark` folder. Inherit 
      --max_rounds 20        # Max iteration rounds for AFLOW
      --check_convergence    # Whether to enable early stop
      --validation_rounds 5  # Validation rounds for AFLOW
-     --if_first_optimize    # Set True for first optimization, False afterwards
+     --if_force_download    # Force dataset download if set to True
      ```
 
 3. Configure LLM parameters in `config/config2.yaml` (see `config/config2.example.yaml` for reference)
