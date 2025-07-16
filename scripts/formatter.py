@@ -137,7 +137,7 @@ class CodeFormatter(BaseFormatter):
             "Return ONLY the complete, runnable code without explanations. "
             "Use proper Python syntax and formatting. "
         )
-        
+
         # Add function-specific instructions if function_name is provided
         if self.function_name:
             code_instructions += (

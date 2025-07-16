@@ -232,7 +232,6 @@ class AsyncLLM:
         """
         # Prepare the prompt with formatting instructions
         formatted_prompt = formatter.prepare_prompt(prompt)
-        
         # Call the LLM
         response = await self.__call__(formatted_prompt)
         

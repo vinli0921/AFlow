@@ -53,7 +53,7 @@ class Operator:
 
     async def _fill_node(self, op_class, prompt, mode=None, **extra_kwargs):
         # Create appropriate formatter based on mode
-        formatter = self._create_formatter(op_class, mode)
+        formatter = self._create_formatter(op_class, mode, **extra_kwargs)
         
         try:
             # Use the formatter with AsyncLLM
@@ -72,12 +72,13 @@ class Operator:
             print(f"Format error in {self.name}: {str(e)}")
             return {"error": str(e)}
     
-    def _create_formatter(self, op_class, mode=None) -> Optional[BaseFormatter]:
+    def _create_formatter(self, op_class, mode=None, **extra_kwargs) -> Optional[BaseFormatter]:
         """Create appropriate formatter based on operation class and mode"""
         if mode == "xml_fill":
             return XmlFormatter.from_model(op_class)
         elif mode == "code_fill":
-            return CodeFormatter()
+            function_name = extra_kwargs.get("function_name")
+            return CodeFormatter(function_name=function_name)
         elif mode == "single_fill":
             return TextFormatter()
         else:
