@@ -48,6 +48,11 @@ EXPERIMENT_CONFIGS: Dict[str, ExperimentConfig] = {
         question_type="code",
         operators=["Custom", "CustomCodeGenerate", "ScEnsemble", "Test"],
     ),
+    "LiveCodeBench": ExperimentConfig(
+        dataset="LiveCodeBench",
+        question_type="code",
+        operators=["Custom", "CustomCodeGenerate", "ScEnsemble", "Test"],
+    ),
 }
 
 
@@ -68,7 +73,7 @@ def parse_args():
         help="Optimized result save path",
     )
     parser.add_argument("--initial_round", type=int, default=1, help="Initial round")
-    parser.add_argument("--max_rounds", type=int, default=2, help="Max iteration rounds")
+    parser.add_argument("--max_rounds", type=int, default=20, help="Max iteration rounds")
     parser.add_argument("--check_convergence", type=bool, default=True, help="Whether to enable early stop")
     parser.add_argument("--validation_rounds", type=int, default=1, help="Validation rounds")
     parser.add_argument(

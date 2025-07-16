@@ -51,7 +51,7 @@ def check_correctness(sample, generation, timeout, debug=True):
         in_outs = json.loads(sample["input_output"])
         result = [[-1 for _ in range(len(in_outs["inputs"]))]]
         if debug:
-            logger.warning(f"全局超时: {sample.get('task_id', 'unknown')}")
+            logger.warning(f"全局超时: {sample.get('question_id', 'unknown')}")
 
     return result[0], metadata_list[0]
 
@@ -151,7 +151,7 @@ class LiveCodeBench(BaseBenchmark):
                         "outputs": [t["output"] for t in private_tests],
                         "fn_name": json.loads(item["metadata"]).get("func_name", None) if item["metadata"] else None
                     }),
-                    "task_id": f"{item['contest_id']}_{item['question_id']}",
+                    "question_id": item['question_id'],
                     "canonical_solution": item.get("starter_code", ""),
                     "metadata": {
                         "difficulty": item.get("difficulty", "unknown"),
@@ -170,28 +170,29 @@ class LiveCodeBench(BaseBenchmark):
         return processed_data
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2), retry=retry_if_exception_type(Exception), reraise=True)
-    async def _generate_output(self, agent: Callable, prompt: str, entry_point:str) -> Tuple[str, float]:
+    async def _generate_output(self, agent: Callable, prompt: str, entry_point:str, question_id: str = "") -> Tuple[str, float]:
         # entry_point = "" # 要写func name
-        return await asyncio.wait_for(agent(prompt, entry_point), timeout=120)
+        return await asyncio.wait_for(agent(prompt, entry_point, question_id), timeout=120)
 
     async def evaluate_problem(self, problem: dict, agent: Callable, save_path: str = None) -> Tuple[str, str, str, float, Dict, float]:
         question = problem["question"]
-        task_id = problem["task_id"]
+        question_id = problem["question_id"]
         
         try:
-            logger.info(f"开始评估 LiveCodeBench 问题: {task_id}")
+            logger.info(f"开始评估 LiveCodeBench 问题: {question_id}")
             
             # 生成代码
             entry_point = problem["metadata"].get("func_name", "wrapped_function") if problem["metadata"] else "wrapped_function"
+            question_id = problem["question_id"]
             logger.info(f"entry_point: {entry_point}")
-            prediction, cost = await self._generate_output(agent, question, entry_point)
-            logger.info(f"完成代码生成，任务: {task_id}, 成本: {cost}")
+            prediction, cost = await self._generate_output(agent, question, entry_point, question_id)
+            logger.info(f"完成代码生成，任务: {question_id}, 成本: {cost}")
             prediction = self.parse_code(prediction)
             # 使用LiveCodeBench的评测逻辑
             sample = {
                 "question": question,
                 "input_output": problem["input_output"],
-                "task_id": task_id
+                "question_id": question_id
             }
             #logger.info(f"开始评估sample {sample['input_output']}")
             
@@ -212,7 +213,7 @@ class LiveCodeBench(BaseBenchmark):
             
             # 构建结果详情
             evaluation_details = {
-                "task_id": task_id,
+                "question_id": question_id,
                 "test_results": test_results,
                 "metadata": test_metadata,
                 "execution_success": passed,
@@ -222,7 +223,7 @@ class LiveCodeBench(BaseBenchmark):
             
             # 构建预期输出（用于日志）
             expected_output = {
-                "task_id": task_id,
+                "question_id": question_id,
                 "difficulty": evaluation_details["difficulty"],
                 "platform": evaluation_details["platform"],
                 "canonical_solution": problem.get("canonical_solution", "")
@@ -237,9 +238,9 @@ class LiveCodeBench(BaseBenchmark):
                     extracted_output=prediction,
                     extract_answer_code="N/A"
                 )
-                logger.warning(f"任务失败: {task_id}, 得分: {score}")
+                logger.warning(f"任务失败: {question_id}, 得分: {score}")
             else:
-                logger.info(f"任务成功: {task_id}, 得分: {score}")
+                logger.info(f"任务成功: {question_id}, 得分: {score}")
 
             result = (question, prediction, json.dumps(expected_output), score, evaluation_details, cost)
             
@@ -251,15 +252,15 @@ class LiveCodeBench(BaseBenchmark):
             return result
 
         except asyncio.TimeoutError:
-            logger.error(f"代码生成超时: {task_id}")
-            evaluation_details = {"task_id": task_id, "error": "Timeout"}
+            logger.error(f"代码生成超时: {question_id}")
+            evaluation_details = {"question_id": question_id, "error": "Timeout"}
             return (question, "Timeout", "", 0.0, evaluation_details, 0.0)
         
         except Exception as e:
             import traceback
             traceback.print_exc()
-            logger.error(f"评估出错: {task_id}, 错误: {e}")
-            evaluation_details = {"task_id": task_id, "error": str(e)}
+            logger.error(f"评估出错: {question_id}, 错误: {e}")
+            evaluation_details = {"question_id": question_id, "error": str(e)}
             return (question, f"评估出错: {str(e)}", "", 0.0, evaluation_details, 0.0)
 
     def calculate_score(self, expected_output: str, prediction: str) -> Tuple[float, str]:

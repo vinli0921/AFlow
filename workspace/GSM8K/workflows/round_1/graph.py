@@ -3,7 +3,7 @@ import workspace.GSM8K.workflows.template.operator as operator
 import workspace.GSM8K.workflows.round_1.prompt as prompt_custom
 from scripts.async_llm import create_llm_instance
 
-DatasetType = Literal["HumanEval", "MBPP", "GSM8K", "MATH", "HotpotQA", "DROP"]
+from scripts.evaluator import DatasetType
 
 class Workflow:
     def __init__(

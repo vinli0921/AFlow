@@ -15,46 +15,7 @@ from scripts.logs import logger
 import re
 
 
-class Operator:
-    def __init__(self, llm: AsyncLLM, name: str):
-        self.name = name
-        self.llm = llm
-
-    def __call__(self, *args, **kwargs):
-        raise NotImplementedError
-
-    async def _fill_node(self, op_class, prompt, mode=None, **extra_kwargs):
-        # Create appropriate formatter based on mode
-        formatter = self._create_formatter(op_class, mode)
-        
-        try:
-            # Use the formatter with AsyncLLM
-            if formatter:
-                response = await self.llm.call_with_format(prompt, formatter)
-            else:
-                # Fallback to direct call if no formatter is needed
-                response = await self.llm(prompt)
-                
-            # Convert to expected format based on the original implementation
-            if isinstance(response, dict):
-                return response
-            else:
-                return {"response": response}
-        except FormatError as e:
-            print(f"Format error in {self.name}: {str(e)}")
-            return {"error": str(e)}
-    
-    def _create_formatter(self, op_class, mode=None) -> Optional[BaseFormatter]:
-        """Create appropriate formatter based on operation class and mode"""
-        if mode == "xml_fill":
-            return XmlFormatter.from_model(op_class)
-        elif mode == "code_fill":
-            return CodeFormatter()
-        elif mode == "single_fill":
-            return TextFormatter()
-        else:
-            # Return None if no specific formatter is needed
-            return None
+from scripts.operators import Operator
 
 
 class Custom(Operator):
