@@ -22,9 +22,10 @@ from scripts.logs import logger
 import sys
 sys.path.append("..")
 sys.path.append("benchmarks")
-from scripts.utils.lcb_runner import run_test  # 确保已安装lcb_runner
+# ensure lcb_runner is installed
+from scripts.utils.lcb_runner import run_test
 
-# 从LiveCodeBench官方eval中复制的关键函数
+# Key functions copied from LiveCodeBench official evaluation
 #sys.set_int_max_str_digits(50000)
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -51,7 +52,9 @@ def check_correctness(sample, generation, timeout, debug=True):
         in_outs = json.loads(sample["input_output"])
         result = [[-1 for _ in range(len(in_outs["inputs"]))]]
         if debug:
-            logger.warning(f"全局超时: {sample.get('question_id', 'unknown')}")
+            logger.warning(
+                f"Global timeout: {sample.get('question_id', 'unknown')}"
+            )
 
     return result[0], metadata_list[0]
 
@@ -116,22 +119,22 @@ class LiveCodeBench(BaseBenchmark):
         if exception_occurred:
             raise exception_occurred[0]
         return result[0] if result else None
-    def parse_code(self,prediction):
+    def parse_code(self, prediction):
         prediction = prediction.split("```python")[-1]
         prediction = prediction.split("```")[0]
         return prediction
     async def load_data(self, specific_indices: List[int] = None) -> List[dict]:
-        """从JSONL文件加载数据并转换为LiveCodeBench评测格式"""
+        """Load data from JSONL and convert to LiveCodeBench evaluation format."""
         raw_data = []
         async with aiofiles.open(self.file_path, mode="r", encoding="utf-8") as file:
             async for line in file:
                 raw_data.append(json.loads(line))
         
-        # 转换为评测格式
+        # Convert to evaluation format
         processed_data = []
         for item in raw_data:
             try:
-                # 处理私有测试用例（只使用private test cases进行评测）
+                # Handle private test cases (only use private test cases for evaluation)
                 try:
                     private_tests = json.loads(item["private_test_cases"])
                 except:
@@ -143,7 +146,7 @@ class LiveCodeBench(BaseBenchmark):
                         )
                     )
                 
-                # 构建评测样本
+                # Build evaluation sample
                 processed_item = {
                     "question": item["question_content"],
                     "input_output": json.dumps({
@@ -156,13 +159,13 @@ class LiveCodeBench(BaseBenchmark):
                     "metadata": {
                         "difficulty": item.get("difficulty", "unknown"),
                         "platform": item.get("platform", "unknown"),
-                        "original_data": item  # 保留原始数据
+                        "original_data": item  # Keep original data
                     }
                 }
                 processed_data.append(processed_item)   
             
             except Exception as e:
-                logger.error(f"处理数据时出错: {str(e)}")
+                logger.error(f"Error processing data: {str(e)}")
                 continue
         
         if specific_indices is not None:
@@ -171,7 +174,7 @@ class LiveCodeBench(BaseBenchmark):
 
     @retry(stop=stop_after_attempt(3), wait=wait_fixed(2), retry=retry_if_exception_type(Exception), reraise=True)
     async def _generate_output(self, agent: Callable, prompt: str, entry_point:str, question_id: str = "") -> Tuple[str, float]:
-        # entry_point = "" # 要写func name
+        # entry_point = ""  # specify function name
         return await asyncio.wait_for(agent(prompt, entry_point, question_id), timeout=120)
 
     async def evaluate_problem(self, problem: dict, agent: Callable, save_path: str = None) -> Tuple[str, str, str, float, Dict, float]:
@@ -179,24 +182,30 @@ class LiveCodeBench(BaseBenchmark):
         question_id = problem["question_id"]
         
         try:
-            logger.info(f"开始评估 LiveCodeBench 问题: {question_id}")
+            logger.info(
+                f"Start evaluating LiveCodeBench problem: {question_id}"
+            )
             
-            # 生成代码
+            # Generate code
             entry_point = problem["metadata"].get("func_name", "wrapped_function") if problem["metadata"] else "wrapped_function"
             question_id = problem["question_id"]
             logger.info(f"entry_point: {entry_point}")
-            prediction, cost = await self._generate_output(agent, question, entry_point, question_id)
-            logger.info(f"完成代码生成，任务: {question_id}, 成本: {cost}")
+            prediction, cost = await self._generate_output(
+                agent, question, entry_point, question_id
+            )
+            logger.info(
+                f"Finished code generation, task: {question_id}, cost: {cost}"
+            )
             prediction = self.parse_code(prediction)
-            # 使用LiveCodeBench的评测逻辑
+            # Use LiveCodeBench evaluation logic
             sample = {
                 "question": question,
                 "input_output": problem["input_output"],
                 "question_id": question_id
             }
-            #logger.info(f"开始评估sample {sample['input_output']}")
+            # logger.info(f"Start evaluating sample {sample['input_output']}")
             
-            # 在多进程环境中评估
+            # Evaluate in a multiprocessing environment
             args = ([prediction], sample, False, self.timeout)
             loop = asyncio.get_running_loop()
             with ProcessPoolExecutor(max_workers=1) as executor:
@@ -204,14 +213,14 @@ class LiveCodeBench(BaseBenchmark):
                     executor, evaluate_generations_by_problem, args
                 )
             
-            # 解析结果
-            logger.info(f"测试结果：{results}")
-            test_results = results[0]  # 取第一个(也是唯一一个)生成结果的所有测试用例结果
+            # Parse results
+            logger.info(f"Test results: {results}")
+            test_results = results[0]  # Take all test case results of the first (and only) generation
             test_metadata = metadata[0]
             passed = all(r == 1 for r in test_results)
             score = 1.0 if passed else 0.0
             
-            # 构建结果详情
+            # Build evaluation details
             evaluation_details = {
                 "question_id": question_id,
                 "test_results": test_results,
@@ -221,7 +230,7 @@ class LiveCodeBench(BaseBenchmark):
                 "platform": problem.get("metadata", {}).get("platform", "unknown")
             }
             
-            # 构建预期输出（用于日志）
+            # Build expected output for logging
             expected_output = {
                 "question_id": question_id,
                 "difficulty": evaluation_details["difficulty"],
@@ -229,7 +238,7 @@ class LiveCodeBench(BaseBenchmark):
                 "canonical_solution": problem.get("canonical_solution", "")
             }
 
-            # 记录失败情况
+            # Log failures
             if not passed:
                 self.log_mismatch(
                     problem=question,
@@ -238,13 +247,13 @@ class LiveCodeBench(BaseBenchmark):
                     extracted_output=prediction,
                     extract_answer_code="N/A"
                 )
-                logger.warning(f"任务失败: {question_id}, 得分: {score}")
+                logger.warning(f"Task failed: {question_id}, score: {score}")
             else:
-                logger.info(f"任务成功: {question_id}, 得分: {score}")
+                logger.info(f"Task succeeded: {question_id}, score: {score}")
 
             result = (question, prediction, json.dumps(expected_output), score, evaluation_details, cost)
             
-            # 保存结果
+            # Save results
             if save_path:
                 async with aiofiles.open(save_path, mode="a", encoding="utf-8") as file:
                     await file.write(json.dumps(result) + "\n")
@@ -252,16 +261,23 @@ class LiveCodeBench(BaseBenchmark):
             return result
 
         except asyncio.TimeoutError:
-            logger.error(f"代码生成超时: {question_id}")
+            logger.error(f"Code generation timeout: {question_id}")
             evaluation_details = {"question_id": question_id, "error": "Timeout"}
             return (question, "Timeout", "", 0.0, evaluation_details, 0.0)
         
         except Exception as e:
             import traceback
             traceback.print_exc()
-            logger.error(f"评估出错: {question_id}, 错误: {e}")
+            logger.error(f"Evaluation error: {question_id}, error: {e}")
             evaluation_details = {"question_id": question_id, "error": str(e)}
-            return (question, f"评估出错: {str(e)}", "", 0.0, evaluation_details, 0.0)
+            return (
+                question,
+                f"Evaluation error: {str(e)}",
+                "",
+                0.0,
+                evaluation_details,
+                0.0,
+            )
 
     def calculate_score(self, expected_output: str, prediction: str) -> Tuple[float, str]:
         return 0.0, ""
@@ -275,40 +291,42 @@ class LiveCodeBench(BaseBenchmark):
         if not past_data_path:
             past_data_path = os.path.join(self.log_path, f"{self.name}_results.jsonl")
         
-        # 加载历史结果
+        # Load past results
         past_results = {}
         if os.path.exists(past_data_path):
             async with aiofiles.open(past_data_path, mode="r", encoding="utf-8") as file:
                 async for line in file:
                     try:
                         result = json.loads(line)
-                        # 使用问题内容作为键
+                        # Use question text as key
                         past_results[result[0]] = result
                     except:
                         continue
 
-        # 过滤新问题
+        # Filter new problems
         new_data = [p for p in all_data if p["question"] not in past_results]
         
         if not new_data:
-            logger.info("所有问题都已评估完成")
+            logger.info("All problems have been evaluated")
             return None, None, None
 
-        logger.info(f"发现 {len(new_data)} 个新问题需要评估，共 {len(all_data)} 个问题")
+        logger.info(
+            f"{len(new_data)} new problems to evaluate out of {len(all_data)} total"
+        )
 
-        # 评估新问题
+        # Evaluate new problems
         new_results = await self.evaluate_all_problems(
             new_data, agent, save_path=past_data_path, max_concurrent_tasks=max_concurrent_tasks
         )
         
-        # 合并结果
+        # Merge results
         all_results = list(past_results.values()) + new_results
         
-        # 保存最终结果
+        # Save final results
         columns = self.get_result_columns()
         average_score, average_cost, total_cost = self.save_results_to_csv(all_results, columns)
         
-        logger.info(f"{self.name} 数据集平均得分: {average_score:.5f}")
-        logger.info(f"总成本: {total_cost:.5f}")
-        logger.info(f"平均成本: {average_cost:.5f}")
+        logger.info(f"{self.name} dataset average score: {average_score:.5f}")
+        logger.info(f"Total cost: {total_cost:.5f}")
+        logger.info(f"Average cost: {average_cost:.5f}")
         return average_score, average_cost, total_cost
