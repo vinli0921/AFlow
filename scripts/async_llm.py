@@ -95,7 +95,7 @@ class ModelPricing:
         "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
         "gpt-4o-mini-2024-07-18": {"input": 0.00015, "output": 0.0006},
         "claude-3-5-sonnet": {"input": 0.003, "output": 0.015},
-        "o3":{"input":"0.003", "output":"0.015"},
+        "o3":{"input":0.003, "output":0.015},
         "o3-mini": {"input": 0.0011, "output": 0.0025},
     }
     

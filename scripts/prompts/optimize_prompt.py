@@ -31,6 +31,7 @@ When introducing new functionalities in the graph, please make sure to import th
 **Under no circumstances should Graph output None for any field.**
 Use custom methods to restrict your output format, rather than using code (outside of the code, the system will extract answers based on certain rules and score them).
 It is very important to format the Graph output answers, you can refer to the standard answer format in the log.
+You do not need to manually import prompt_custom or operator to use them; they are already included in the execution environment.
 """
 
 WORKFLOW_CUSTOM_USE = """\nHere's an example of using the `custom` method in graph:
