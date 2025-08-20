@@ -7,3 +7,4 @@ optimized
 *.pyc
 /workspace
 *.json
+.venv/
