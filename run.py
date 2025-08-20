@@ -92,7 +92,7 @@ def parse_args():
         "--exec_model_name",
         type=str,
         default="gpt-4o",
-        help="Specifies the name of the model used for execution tasks.",
+        help="Specifies the name of the model used for execution tasks. ",
     )
     return parser.parse_args()
 
